@@ -1,0 +1,67 @@
+<!-- Card for connecting to GitHub -->
+<mat-card *ngIf="!isLoading && !user" style="max-width: 80%">
+  <div>
+    <div style="display: flex; align-items: center">
+      <mat-icon
+        svgIcon="github"
+        style="margin-right: 8px; width: 10%; height: 50%"
+      ></mat-icon>
+      <span style="font-size: 1.2rem; font-weight: bold">Github</span>
+    </div>
+    <div *ngIf="isLoading">...isLoading</div>
+    <div style="text-align: center; margin-top: 20px">
+      <button mat-raised-button color="primary" (click)="connectGithub()">
+        Connect
+      </button>
+    </div>
+    <div
+      style="
+        text-align: center;
+        margin-top: 20px;
+        font-size: 1.1rem;
+        font-weight: 600;
+      "
+    >
+      Connect Sredio to Github
+    </div>
+  </div>
+</mat-card>
+
+<!-- Accordion for connected user and sync status -->
+<mat-accordion *ngIf="!isLoading && user">
+  <mat-expansion-panel>
+    <mat-expansion-panel-header>
+      <div class="sync-status-container">
+        <div class="sync-status-left">
+          <img
+            class="icon github-icon"
+            src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+            alt="GitHub"
+            style="width: 40px; height: 40px; margin-right: 10px"
+          />
+          <span class="status-indicator">
+            <mat-icon class="status-icon">check_circle</mat-icon>
+          </span>
+          <span class="sync-history">
+            <mat-icon class="history-icon">history</mat-icon>
+          </span>
+        </div>
+        <div class="sync-status-right" style="margin-left: auto">
+          <span class="admin-info">
+            Admin:
+            <span class="last-synced">Last Synced: {{ user.integration_created_at }}</span>
+          </span>
+          <span class="sync-type">Sync Type: {{ user.type  }}</span>
+        </div>
+      </div>
+    </mat-expansion-panel-header>
+
+    <!-- Collapsible content (Remove Button) -->
+    <div class="remove-container" style="text-align: center; margin-top: 20px">
+      <button mat-raised-button color="warn" (click)="removeSync()">
+        Remove
+        <mat-icon>delete</mat-icon>
+      </button>
+    </div>
+  </mat-expansion-panel>
+</mat-accordion>
