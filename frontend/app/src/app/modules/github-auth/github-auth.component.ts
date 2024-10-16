@@ -4,6 +4,9 @@ import { MatIconRegistry } from '@angular/material/icon';
 import { OAuthService } from 'angular-oauth2-oidc';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
+import { ColDef } from 'ag-grid-community'; // Import ColDef for column definitions
+import { GithubService } from './github-aith.service';
+import slugify from 'slugify';
 
 @Component({
   selector: 'github-auth',
@@ -15,6 +18,32 @@ export class GithubAuthComponent implements OnInit {
   accessToken: any;
   userId: any;
   isLoading: any = false;
+  isMetaLoading: any = false;
+  isAnyRecordSeletec: any = false;
+  isFetchingOrg: any = false;
+  organizationTableHeaders: ColDef[] = [
+    { headerName: 'ID', field: 'id' },
+    { headerName: 'Name', field: 'name' },
+    { headerName: 'Link', field: 'link' },
+    { headerName: 'Slug', field: 'slug' },
+    { headerName: 'Organization', field: 'organization' },
+    {
+      headerName: 'Included',
+      field: 'included',
+      editable: true,
+    },
+  ];
+
+  repoMetaTableHeaders: ColDef[] = [
+    { headerName: 'UserID', field: 'userId' },
+    { headerName: 'User', field: 'user' },
+    { headerName: 'Total Commits', field: 'totalCommits' },
+    { headerName: 'Total Pull Request', field: 'totalPullRequests' },
+    { headerName: 'Total Issues', field: 'totalIssues' },
+  ];
+
+  orgReposData: any = [];
+  repoMetaData: any = [];
 
   constructor(
     private matIconRegistry: MatIconRegistry,
@@ -22,7 +51,8 @@ export class GithubAuthComponent implements OnInit {
     private oauthService: OAuthService,
     private http: HttpClient,
     private route: ActivatedRoute,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly githubAuthService: GithubService
   ) {
     // Register the GitHub icon
     this.matIconRegistry.addSvgIcon(
@@ -57,10 +87,10 @@ export class GithubAuthComponent implements OnInit {
   private configureOAuth() {
     const authConfig = {
       issuer: 'http://localhost:3000/api/v1/auth/login',
-      redirectUri: 'http://localhost:3000/api/v1/auth/callback',
-      clientId: 'Iv23liAS8oSh0OhViBK1',
+      redirectUri: 'http://localhost:4200/auth',
+      clientId: 'Ov23liZdO1pe4X3Kjjug',
       responseType: 'code',
-      scope: 'user:email',
+      scope: 'read:org',
       requireHttps: false,
       showDebugInformation: true,
     };
@@ -72,41 +102,98 @@ export class GithubAuthComponent implements OnInit {
   }
 
   fetchUser() {
-    this.http
-      .get(
-        `http://localhost:3000/api/v1/user?access_token=${this.accessToken}&user_id=${this.userId}`,
-        { withCredentials: true }
-      )
-      .subscribe(
-        (data) => {
-          this.user = data;
-          this.isLoading = false;
-        },
-        (error) => {
-          this.isLoading = false;
-
-          console.error('Error fetching user', error);
-        }
-      );
+    this.githubAuthService.fetchUser(this.accessToken, this.userId).subscribe({
+      next: (data: any) => {
+        this.user = data;
+        this.isLoading = false;
+        if (this.user) this.fetchUserRepos();
+      },
+      error: (error: any) => {
+        if ((error.status = 401)) this.user = null;
+        console.log(this.user, 'this.userthis.userthis.user');
+        console.error('Error fetching user:', error);
+        this.isLoading = false;
+      },
+    });
   }
 
   removeSync() {
-    this.http
-      .get(
-        `http://localhost:3000/api/v1/user/remove-integration?access_token=${this.accessToken}&user_id=${this.userId}`
-      )
-      .subscribe(
-        (response) => {},
-        (error) => {
+    this.githubAuthService
+      .removeIntegration(this.accessToken, this.userId)
+      .subscribe({
+        next: (data: any) => {},
+        error: (error: any) => {
           this.router
             .navigate(['/auth'])
             .then(() => {
               this.user = null;
             })
             .catch((error) => {});
+        },
+      });
+  }
+  fetchUserRepos() {
+    this.isFetchingOrg = true;
+    this.githubAuthService.fetchUserRepos(this.accessToken).subscribe({
+      next: (response: any) => {
+        console.log(response.records, 'datadatadata');
+        response.records.forEach((org: any) => {
+          org.repositories.forEach((repo: any) => {
+            const repoObj = {
+              id: repo.id,
+              organization: org.organization.login,
+              name: repo?.name || '',
+              link: repo?.clone_url,
+              full_name: repo?.full_name,
+              slug: slugify(repo?.name, {
+                replacement: '-',
+                remove: undefined,
+                lower: true,
+                trim: true,
+              }),
+              included: false,
+            };
+            this.orgReposData.push(repoObj);
+            this.isFetchingOrg = false;
+          });
+        });
+      },
+      error: (error: any) => {
+        this.isFetchingOrg = false;
+        console.error('Error fetching user:', error);
+      },
+    });
+  }
 
-          console.error('Error while remvoing integration', error);
-        }
-      );
+  onRowDataUpdated(event: any) {
+    this.orgReposData[event.rowIndex].included = event.value;
+    console.log(this.orgReposData[event.rowIndex].included);
+    if (this.orgReposData[event.rowIndex].included)
+      this.handleRowClick(this.orgReposData[event.rowIndex]);
+  }
+
+  onRowClicked(event: any): void {
+    this.handleRowClick(event.data);
+  }
+
+  handleRowClick(data: any): void {
+    if (data.included) {
+      this.repoMetaData = [];
+      this.isAnyRecordSeletec = true;
+      this.isMetaLoading = true;
+      this.githubAuthService
+        .fetchUserReposMeta(this.accessToken, data.full_name)
+        .subscribe({
+          next: (response: any) => {
+            console.log(response.records);
+            this.repoMetaData = response.records;
+            this.isMetaLoading = false;
+          },
+          error: (error: any) => {
+            console.error('Error fetching user:', error);
+            this.isMetaLoading = false;
+          },
+        });
+    }
   }
 }

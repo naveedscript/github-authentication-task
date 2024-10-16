@@ -1,0 +1,20 @@
+{
+  "name": "github-oauth",
+  "version": "1.0.0",
+  "description": "You can enable other users to authorize your OAuth app.",
+  "main": "index.js",
+  "scripts": {
+    "start": "concurrently \"npm run start-server\" \"npm run start-client\"",
+    "start-client": "cd frontend/app && npm run start",
+    "start-server": "cd backend && npm run dev",
+    "install-deps": "concurrently \"rm -rf node_modules && npm i\" \"npm run install-deps-server\" \"npm run install-deps-client\"",
+    "install-deps-server": "cd backend && rm -rf node_modules && npm i",
+    "install-deps-client": "cd frontend/app && rm -rf node_modules && npm i"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "concurrently": "^9.0.1"
+  }
+}

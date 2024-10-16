@@ -49,9 +49,11 @@
         <div class="sync-status-right" style="margin-left: auto">
           <span class="admin-info">
             Admin:
-            <span class="last-synced">Last Synced: {{ user.integration_created_at }}</span>
+            <span class="last-synced"
+              >Last Synced: {{ user.integration_created_at }}</span
+            >
           </span>
-          <span class="sync-type">Sync Type: {{ user.type  }}</span>
+          <span class="sync-type">Sync Type: {{ user.type }}</span>
         </div>
       </div>
     </mat-expansion-panel-header>
@@ -64,4 +66,63 @@
       </button>
     </div>
   </mat-expansion-panel>
+  <!-- Organization Repo Data -->
+  <div *ngIf="isFetchingOrg" style="margin: 50px">Loading ...</div>
+  <div
+    *ngIf="!isFetchingOrg && orgReposData.length"
+    class="ag-container ag-theme-alpine"
+  >
+    <ag-grid-angular
+      style="width: 100%; height: 100%"
+      class="ag-theme-quartz"
+      [rowData]="orgReposData"
+      [columnDefs]="organizationTableHeaders"
+      rowSelection="single"
+      [pagination]="true"
+      (cellValueChanged)="onRowDataUpdated($event)"
+      (rowClicked)="onRowClicked($event)"
+    >
+      >
+    </ag-grid-angular>
+  </div>
+
+  <div *ngIf="!isFetchingOrg && !orgReposData.length" style="margin-left: 50px">
+    No Record
+  </div>
+
+  <!-- Repo meta data -->
+  <div *ngIf="!isFetchingOrg" class="repo-meta-table">
+    <div
+      *ngIf="!isFetchingOrg && repoMetaData.length"
+      class="ag-theme-alpine"
+      style="width: 100%; height: 100%"
+    >
+      <ag-grid-angular
+        style="width: 100%; height: 100%"
+        class="ag-theme-quartz"
+        [rowData]="repoMetaData"
+        [columnDefs]="repoMetaTableHeaders"
+      >
+      </ag-grid-angular>
+    </div>
+    <div
+      *ngIf="!isMetaLoading && !isAnyRecordSeletec && !repoMetaData.length"
+      style="margin-left: 50px"
+    >
+      No Record Selected
+    </div>
+
+    <div
+      *ngIf="isMetaLoading && isAnyRecordSeletec && !repoMetaData.length"
+      style="margin-left: 50px"
+    >
+      Loading ...
+    </div>
+    <div
+      *ngIf="!isMetaLoading && isAnyRecordSeletec && !repoMetaData.length"
+      style="margin-left: 50px"
+    >
+      No Repo Record
+    </div>
+  </div>
 </mat-accordion>

@@ -8,13 +8,12 @@ const axios = require("axios");
 exports.login = catchAsync(async (req, res) => {
   const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
   const REDIRECT_URI = process.env.GITHUB_REDIRECT_URI;
-  const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=user:email`;
+  const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=repo read:org`;
   res.redirect(authUrl);
 });
 
 exports.callbackLogin = catchAsync(async (req, res) => {
   const { code } = req.query;
-  console.log(code, "code");
   try {
     const tokenResponse = await axios.post(
       `https://github.com/login/oauth/access_token`,
@@ -33,20 +32,21 @@ exports.callbackLogin = catchAsync(async (req, res) => {
 
     const userResponse = await axios.get("https://api.github.com/user", {
       headers: {
-        Authorization: `token ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
     });
-    console.log(userResponse, "userResponse");
     const userId = userResponse.data.id;
-
 
     const integration = new GitHubIntegration({
       userId,
       accessToken,
     });
+    req.accessToken = accessToken;
 
     await integration.save();
-    res.redirect(`http://localhost:4200/auth?access_token=${accessToken}&user_id=${userId}`);
+    res.redirect(
+      `http://localhost:4200/auth?access_token=${accessToken}&user_id=${userId}`
+    );
   } catch (error) {
     console.error("Error getting access token", error);
     res

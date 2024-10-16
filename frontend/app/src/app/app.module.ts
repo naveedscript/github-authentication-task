@@ -7,6 +7,7 @@ import { GithubAuthModule } from './modules/github-auth/github-auth.module';
 import { PageNotFoundComponent } from './modules/page-not-found/page-not-found.component';
 import { HttpClientModule } from '@angular/common/http';
 import { OAuthModule } from 'angular-oauth2-oidc';
+import { AgGridModule } from 'ag-grid-angular';
 
 @NgModule({
   declarations: [AppComponent, PageNotFoundComponent],
@@ -16,6 +17,7 @@ import { OAuthModule } from 'angular-oauth2-oidc';
     GithubAuthModule,
     HttpClientModule,
     OAuthModule.forRoot(),
+    AgGridModule,
   ],
   providers: [],
   bootstrap: [AppComponent],
